@@ -7,44 +7,46 @@ const Chat = () => {
   const { chatlistID, setChatlistID } = useContext(UserContext);
 
   const loggedInUser = JSON.parse(localStorage.getItem("user"));
-
   const [openemoji, setOpenmoji] = useState(false);
   const [emojitxt, setemojitxt] = useState("");
   const [messages, setMessages] = useState([]);
-  const [originalMessages, setOriginalMessages] = useState([]); // FIXED
   const [user, setUser] = useState(null);
   const [selectIMG, setSelectIMG] = useState(null);
   const [searchValue, setSearchValue] = useState(false);
   const [showClearPopup, setShowClearPopup] = useState(false);
-
   const [viewprofile, setViewprofile] = useState(false);
-
   const endRef = useRef(null);
 
-  // LOAD CHAT
-  useEffect(() => {
-    if (!chatlistID) {
-      setMessages([]);
-      return;
-    }
+  // unique chat ID between two users
+  const chatId =
+    loggedInUser.id < chatlistID
+      ? `${loggedInUser.id}_${chatlistID}`
+      : `${chatlistID}_${loggedInUser.id}`;
 
+  // LOAD USER + CHAT MESSAGES
+  useEffect(() => {
+    if (!chatlistID) return;
+
+    // load selected user
     axios
       .get(`https://chatappdb-fxka.onrender.com/userslogin/${chatlistID}`)
       .then((res) => {
         setUser(res.data);
-        setMessages(res.data.chat || []);
-        setOriginalMessages(res.data.chat || []); // FIXED
+
+        // read the correct chat from user's chat object
+        const chatData = res.data.chat?.[chatId] || [];
+        setMessages(chatData);
       })
       .catch((err) => console.log(err));
   }, [chatlistID]);
 
-  // AUTO SCROLL
+  // Auto scroll
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
   const handleEmoji = (e) => {
-    setemojitxt((text) => text + e.emoji);
+    setemojitxt((t) => t + e.emoji);
     setOpenmoji(false);
   };
 
@@ -63,16 +65,10 @@ const Chat = () => {
 
     const updatedMessages = [...messages, newMsg];
     setMessages(updatedMessages);
-    setOriginalMessages(updatedMessages); // FIXED
     setemojitxt("");
 
-    await axios.patch(`https://chatappdb-fxka.onrender.com/userslogin/${chatlistID}`, {
-      chat: updatedMessages,
-    });
-
-    await axios.patch(`https://chatappdb-fxka.onrender.com/userslogin/${loggedInUser.id}`, {
-      chat: updatedMessages,
-    });
+    // Update both users' chat objects
+    await updateChat(updatedMessages);
   };
 
   // SEND IMAGE
@@ -83,7 +79,7 @@ const Chat = () => {
     const reader = new FileReader();
 
     reader.onloadend = async () => {
-      const newImgMsg = {
+      const imgMsg = {
         id: Date.now(),
         text: "",
         image: reader.result,
@@ -92,96 +88,87 @@ const Chat = () => {
         receiverId: chatlistID,
       };
 
-      const updatedMessages = [...messages, newImgMsg];
+      const updatedMessages = [...messages, imgMsg];
       setMessages(updatedMessages);
-      setOriginalMessages(updatedMessages); // FIXED
 
-      await axios.patch(`https://chatappdb-fxka.onrender.com/userslogin/${chatlistID}`, {
-        chat: updatedMessages,
-      });
-
-      await axios.patch(`https://chatappdb-fxka.onrender.com/userslogin/${loggedInUser.id}`, {
-        chat: updatedMessages,
-      });
+      await updateChat(updatedMessages);
     };
 
     reader.readAsDataURL(file);
   };
 
-  if (!chatlistID) {
-    return (
-      <div className="Chat noChatSelected"
-        style={{ display: "flex", justifyContent: "center", alignItems: "center" }}
-      >
-        Select a chat to start messaging
-      </div>
-    );
-  }
-
-  const handleDownload = (imgURL) => {
-    const link = document.createElement("a");
-    link.href = imgURL;
-    link.download = "image.jpg";
-    link.click();
-  };
-
-  // SEARCH MESSAGE
-  const searchmsg = (e) => {
-    const searchTerm = e.target.value.toLowerCase();
-
-    if (!searchTerm) {
-      setMessages(originalMessages); // FIXED
-      return;
-    }
-
-    const filteredMessages = originalMessages.filter((msg) =>
-      msg.text?.toLowerCase().includes(searchTerm)
+  // UPDATE CHAT FOR BOTH USERS
+  const updateChat = async (updatedMessages) => {
+    // patch logged in user
+    await axios.patch(
+      `https://chatappdb-fxka.onrender.com/userslogin/${loggedInUser.id}`,
+      {
+        chat: {
+          ...(loggedInUser.chat || {}),
+          [chatId]: updatedMessages,
+        },
+      }
     );
 
-    setMessages(filteredMessages);
+    // patch receiver user
+    await axios.patch(
+      `https://chatappdb-fxka.onrender.com/userslogin/${chatlistID}`,
+      {
+        chat: {
+          ...(user.chat || {}),
+          [chatId]: updatedMessages,
+        },
+      }
+    );
   };
 
-  // CLOSE CHAT
   const closeChat = () => {
     setChatlistID(null);
     setMessages([]);
   };
 
-  // CLEAR CHAT
   const clearChat = async () => {
-    const updatedMessages = [];
-
-    await axios.patch(`https://chatappdb-fxka.onrender.com/userslogin/${chatlistID}`, {
-      chat: updatedMessages,
-    });
-
-    await axios.patch(`https://chatappdb-fxka.onrender.com/userslogin/${loggedInUser.id}`, {
-      chat: updatedMessages,
-    });
+    await updateChat([]);
 
     setMessages([]);
-    setOriginalMessages([]);
     setShowClearPopup(false);
   };
 
-  
+  const searchmsg = (e) => {
+    const term = e.target.value.toLowerCase();
+
+    if (!term.trim()) {
+      setMessages(user.chat?.[chatId] || []);
+      return;
+    }
+
+    const filtered = (user.chat?.[chatId] || []).filter((msg) =>
+      msg.text?.toLowerCase().includes(term)
+    );
+
+    setMessages(filtered);
+  };
+
+  if (!chatlistID) {
+    return (
+      <div className="Chat noChatSelected">
+        Select a chat to start messaging
+      </div>
+    );
+  }
 
   return (
-    <div className="Chat" >
+    <div className="Chat">
+
       {/* CLEAR CHAT POPUP */}
       {showClearPopup && (
         <div className="confirmPopup">
           <div className="confirmBox">
             <h3>Clear Chat?</h3>
             <p>Are you sure you want to delete all messages?</p>
-
             <div className="btns">
-              <button className="cancelBtn" onClick={() => setShowClearPopup(false)}>
-                Cancel
-              </button>
-              <button className="deleteBtn" onClick={clearChat}>
-                Yes, Clear
-              </button>
+              <button onClick={() => setShowClearPopup(false)}>Cancel</button>
+              <button onClick={clearChat}>Yes, Clear</button>
             </div>
           </div>
         </div>
@@ -191,8 +178,7 @@ const Chat = () => {
       <div className="top">
         <div className="user">
           <div className="texts">
-            <img src={user?.image || "./avatar.png"} alt="" onClick={()=>setViewprofile(true)} />
-
+            <img src={user?.image || "./avatar.png"} onClick={() => setViewprofile(true)} />
             <div>
               <span>{user?.profilename || user?.username}</span>
               <p>Online</p>
@@ -203,48 +189,29 @@ const Chat = () => {
             <input type="text" placeholder="Search message" onChange={searchmsg} />
           )}
 
-          <div className="icons" >
-            <img
-              src="./ClearChat.svg"
-              alt="Clear Chat"
-              title="Clear Chat"
-              onClick={() => setShowClearPopup(true)}
-            />
-
-            <img
-              src="./CloseChat.svg"
-              alt="Close Chat"
-              title="Close Chat"
-              onClick={closeChat}
-            />
-
-            <img
-              src="./search.svg"
-              alt="Search"
-              title="Search"
-              onClick={() => setSearchValue(!searchValue)}
-            />
+          <div className="icons">
+            <img src="./ClearChat.svg" onClick={() => setShowClearPopup(true)} />
+            <img src="./CloseChat.svg" onClick={closeChat} />
+            <img src="./search.svg" onClick={() => setSearchValue(!searchValue)} />
           </div>
         </div>
       </div>
 
-      {/* CHAT MESSAGES */}
+      {/* CHAT */}
       <div className="center">
-
         {messages.map((msg) => (
           <div
             key={msg.id}
-            className={`message ${msg.senderId === loggedInUser?.id ? "own" : ""}`}
+            className={`message ${msg.senderId === loggedInUser.id ? "own" : ""}`}
           >
-            {msg.senderId !== loggedInUser?.id && (
-              <img src={user.image || "./avatar.png"} alt="profile" />
+            {msg.senderId !== loggedInUser.id && (
+              <img src={user?.image || "./avatar.png"} />
             )}
 
             <div className="texts">
               {msg.image ? (
                 <img
                   src={msg.image}
-                  alt="sent"
                   style={{ width: "220px", borderRadius: "10px" }}
                   onClick={() => setSelectIMG(msg.image)}
                 />
@@ -262,30 +229,27 @@ const Chat = () => {
       {/* IMAGE POPUP */}
       {selectIMG && (
         <div className="popup" onClick={() => setSelectIMG(null)}>
-          <img src={selectIMG} alt="" />
-          <div className="downloadBtn" onClick={() => handleDownload(selectIMG)}>
-            <img src="./download.png" alt="" />
-          </div>
+          <img src={selectIMG} />
         </div>
       )}
 
-      {/* View Profile Image */}
+      {/* PROFILE VIEW */}
       {viewprofile && (
         <div className="profilePopup" onClick={() => setViewprofile(false)}>
-          <img src={user?.image || "./avatar.png"} alt="" />
+          <img src={user?.image || "./avatar.png"} />
         </div>
       )}
 
-      {/* INPUT BAR */}
+      {/* BOTTOM BAR */}
       <div className="bottom">
         <div className="icons">
           <label htmlFor="file">
-            <img src="./img.svg" alt="" />
+            <img src="./img.svg" />
           </label>
           <input type="file" id="file" style={{ display: "none" }} onChange={handleAvatar} />
 
-          <img src="./camera.svg" alt="" />
-          <img src="./mic.svg" alt="" />
+          <img src="./camera.svg" />
+          <img src="./mic.svg" />
         </div>
 
         <input
@@ -297,12 +261,7 @@ const Chat = () => {
         />
 
         <div className="emoji">
-          <img
-            src="./emoji.svg"
-            alt=""
-            onClick={() => setOpenmoji((prev) => !prev)}
-          />
-
+          <img src="./emoji.svg" onClick={() => setOpenmoji(!openemoji)} />
           {openemoji && (
             <div className="picker">
               <EmojiPicker onEmojiClick={handleEmoji} />
@@ -310,9 +269,7 @@ const Chat = () => {
           )}
         </div>
 
-        <button className="sendButton" onClick={handleSend}>
-          send
-        </button>
+        <button className="sendButton" onClick={handleSend}>send</button>
       </div>
     </div>
   );
