@@ -17,28 +17,86 @@ const Chat = () => {
   const [viewprofile, setViewprofile] = useState(false);
   const endRef = useRef(null);
 
-  // unique chat ID between two users
+  // Unique chatId between 2 users
   const chatId =
     loggedInUser.id < chatlistID
       ? `${loggedInUser.id}_${chatlistID}`
       : `${chatlistID}_${loggedInUser.id}`;
 
-  // LOAD USER + CHAT MESSAGES
+  // ⭐ REFRESH CHAT WITH LATEST DB DATA
+  const refreshChat = async () => {
+    try {
+      const res = await axios.get(
+        `https://chatappdb-fxka.onrender.com/userslogin/${chatlistID}`
+      );
+
+      setUser(res.data);
+
+      // OLD DB STRUCTURE SUPPORT
+      if (Array.isArray(res.data.chat)) {
+        const oldMessages = res.data.chat.filter(
+          (m) =>
+            (m.senderId === loggedInUser.id &&
+              m.receiverId === chatlistID) ||
+            (m.senderId === chatlistID &&
+              m.receiverId === loggedInUser.id)
+        );
+        setMessages(oldMessages);
+        return;
+      }
+
+      // NEW STRUCTURE
+      setMessages(res.data.chat?.[chatId] || []);
+
+    } catch (err) {
+      console.log("Error refreshing chat:", err);
+    }
+  };
+
+  // Initial Load
   useEffect(() => {
     if (!chatlistID) return;
-
-    // load selected user
-    axios
-      .get(`https://chatappdb-fxka.onrender.com/userslogin/${chatlistID}`)
-      .then((res) => {
-        setUser(res.data);
-
-        // read the correct chat from user's chat object
-        const chatData = res.data.chat?.[chatId] || [];
-        setMessages(chatData);
-      })
-      .catch((err) => console.log(err));
+    refreshChat();
   }, [chatlistID]);
+
+  // ⭐ REAL-TIME DETECTION — Refresh ONLY when new message arrives
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      if (!chatlistID) return;
+
+      try {
+        const res = await axios.get(
+          `https://chatappdb-fxka.onrender.com/userslogin/${chatlistID}`
+        );
+
+        let latest = [];
+
+        // OLD DB STRUCTURE SUPPORT
+        if (Array.isArray(res.data.chat)) {
+          latest = res.data.chat.filter(
+            (m) =>
+              (m.senderId === loggedInUser.id &&
+                m.receiverId === chatlistID) ||
+              (m.senderId === chatlistID &&
+                m.receiverId === loggedInUser.id)
+          );
+        } else {
+          // NEW STRUCTURE
+          latest = res.data.chat?.[chatId] || [];
+        }
+
+        // 🔥 Only refresh when messages change (new or delete)
+        if (latest.length !== messages.length) {
+          setUser(res.data);
+          setMessages(latest);
+        }
+      } catch (err) {
+        console.log("Auto-update error:", err);
+      }
+    }, 1200); // Lightweight check every 1.2s
+
+    return () => clearInterval(interval);
+  }, [chatlistID, messages]);
 
   // Auto scroll
   useEffect(() => {
@@ -50,7 +108,7 @@ const Chat = () => {
     setOpenmoji(false);
   };
 
-  // SEND TEXT
+  // SEND TEXT MESSAGE
   const handleSend = async () => {
     if (!emojitxt.trim()) return;
 
@@ -67,11 +125,10 @@ const Chat = () => {
     setMessages(updatedMessages);
     setemojitxt("");
 
-    // Update both users' chat objects
     await updateChat(updatedMessages);
   };
 
-  // SEND IMAGE
+  // SEND IMAGE MESSAGE
   const handleAvatar = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -97,29 +154,82 @@ const Chat = () => {
     reader.readAsDataURL(file);
   };
 
-  // UPDATE CHAT FOR BOTH USERS
+  // ⭐ UPDATE CHAT FOR BOTH USERS + ADD TO FRIEND LIST
   const updateChat = async (updatedMessages) => {
-    // patch logged in user
-    await axios.patch(
-      `https://chatappdb-fxka.onrender.com/userslogin/${loggedInUser.id}`,
-      {
-        chat: {
-          ...(loggedInUser.chat || {}),
-          [chatId]: updatedMessages,
-        },
-      }
-    );
+    try {
+      const allUsers = (await axios.get(
+        "https://chatappdb-fxka.onrender.com/userslogin"
+      )).data;
 
-    // patch receiver user
-    await axios.patch(
-      `https://chatappdb-fxka.onrender.com/userslogin/${chatlistID}`,
-      {
-        chat: {
-          ...(user.chat || {}),
-          [chatId]: updatedMessages,
-        },
+      const sender = allUsers.find((u) => u.id === loggedInUser.id);
+      const receiver = allUsers.find((u) => u.id === chatlistID);
+
+      const updatedSenderFriends = sender.friends?.includes(chatlistID)
+        ? sender.friends
+        : [...(sender.friends || []), chatlistID];
+
+      const updatedReceiverFriends = receiver.friends?.includes(loggedInUser.id)
+        ? receiver.friends
+        : [...(receiver.friends || []), loggedInUser.id];
+
+      // OLD DB STRUCTURE SUPPORT
+      if (Array.isArray(sender.chat)) {
+        await axios.patch(
+          `https://chatappdb-fxka.onrender.com/userslogin/${loggedInUser.id}`,
+          {
+            friends: updatedSenderFriends,
+            chat: [
+              ...(sender.chat || []),
+              ...updatedMessages.filter(
+                (msg) =>
+                  !sender.chat.some((oldMsg) => oldMsg.id === msg.id)
+              ),
+            ],
+          }
+        );
+
+        await axios.patch(
+          `https://chatappdb-fxka.onrender.com/userslogin/${chatlistID}`,
+          {
+            friends: updatedReceiverFriends,
+            chat: [
+              ...(receiver.chat || []),
+              ...updatedMessages.filter(
+                (msg) =>
+                  !receiver.chat.some((oldMsg) => oldMsg.id === msg.id)
+              ),
+            ],
+          }
+        );
+
+        return;
       }
-    );
+
+      // NEW STRUCTURE
+      await axios.patch(
+        `https://chatappdb-fxka.onrender.com/userslogin/${loggedInUser.id}`,
+        {
+          friends: updatedSenderFriends,
+          chat: {
+            ...(sender.chat || {}),
+            [chatId]: updatedMessages,
+          },
+        }
+      );
+
+      await axios.patch(
+        `https://chatappdb-fxka.onrender.com/userslogin/${chatlistID}`,
+        {
+          friends: updatedReceiverFriends,
+          chat: {
+            ...(receiver.chat || {}),
+            [chatId]: updatedMessages,
+          },
+        }
+      );
+    } catch (error) {
+      console.log("Chat update error:", error);
+    }
   };
 
   const closeChat = () => {
@@ -129,7 +239,6 @@ const Chat = () => {
 
   const clearChat = async () => {
     await updateChat([]);
-
     setMessages([]);
     setShowClearPopup(false);
   };
@@ -138,15 +247,15 @@ const Chat = () => {
     const term = e.target.value.toLowerCase();
 
     if (!term.trim()) {
-      setMessages(user.chat?.[chatId] || []);
+      refreshChat();
       return;
     }
 
-    const filtered = (user.chat?.[chatId] || []).filter((msg) =>
-      msg.text?.toLowerCase().includes(term)
+    setMessages(
+      messages.filter((msg) =>
+        msg.text?.toLowerCase().includes(term)
+      )
     );
-
-    setMessages(filtered);
   };
 
   if (!chatlistID) {
@@ -159,7 +268,6 @@ const Chat = () => {
 
   return (
     <div className="Chat">
-
       {/* CLEAR CHAT POPUP */}
       {showClearPopup && (
         <div className="confirmPopup">
@@ -178,7 +286,10 @@ const Chat = () => {
       <div className="top">
         <div className="user">
           <div className="texts">
-            <img src={user?.image || "./avatar.png"} onClick={() => setViewprofile(true)} />
+            <img
+              src={user?.image || "./avatar.png"}
+              onClick={() => setViewprofile(true)}
+            />
             <div>
               <span>{user?.profilename || user?.username}</span>
               <p>Online</p>
@@ -197,7 +308,7 @@ const Chat = () => {
         </div>
       </div>
 
-      {/* CHAT */}
+      {/* CHAT MESSAGES */}
       <div className="center">
         {messages.map((msg) => (
           <div
@@ -233,7 +344,7 @@ const Chat = () => {
         </div>
       )}
 
-      {/* PROFILE VIEW */}
+      {/* PROFILE POPUP */}
       {viewprofile && (
         <div className="profilePopup" onClick={() => setViewprofile(false)}>
           <img src={user?.image || "./avatar.png"} />
@@ -246,7 +357,12 @@ const Chat = () => {
           <label htmlFor="file">
             <img src="./img.svg" />
           </label>
-          <input type="file" id="file" style={{ display: "none" }} onChange={handleAvatar} />
+          <input
+            type="file"
+            id="file"
+            style={{ display: "none" }}
+            onChange={handleAvatar}
+          />
 
           <img src="./camera.svg" />
           <img src="./mic.svg" />
@@ -269,7 +385,9 @@ const Chat = () => {
           )}
         </div>
 
-        <button className="sendButton" onClick={handleSend}>send</button>
+        <button className="sendButton" onClick={handleSend}>
+          send
+        </button>
       </div>
     </div>
   );

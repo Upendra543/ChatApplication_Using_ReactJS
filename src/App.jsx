@@ -1,26 +1,32 @@
-import './App.css'
-import List from './Components/List'
-import Chat from './Components/Chat'
-import Details from './Components/Details'
-import Login from './Components/Login/Login'
-import Notify from './Components/Notify/Notify'
+import './App.css';
+import List from './Components/List';
+import Chat from './Components/Chat';
+import Details from './Components/Details';
+import Login from './Components/Login/Login';
+import Notify from './Components/Notify/Notify';
 
-import axios from 'axios'
-import { useState,createContext } from 'react'
+import axios from 'axios';
+import { useState, createContext } from 'react';
 import { toast } from "sonner";
 
-
 export const UserContext = createContext(null);
+
 function App() {
   const [chatlistID, setChatlistID] = useState(null);
   let [user, setUser] = useState(false);
   let [selectedUser, setSelectedUser] = useState(null);
   let [loginvalues, setLoginvalues] = useState({ email: "", password: "" });
 
+  // ⭐ GET CURRENT LOGGED IN USER ID
+  const loggedUser = JSON.parse(localStorage.getItem("user"));
+  const userID = loggedUser?.id || null;
+
   async function submitLogin(e) {
     e.preventDefault();
     try {
-      const res = await axios.get(`https://chatappdb-fxka.onrender.com/userslogin?email=${loginvalues.email}`);
+      const res = await axios.get(
+        `https://chatappdb-fxka.onrender.com/userslogin?email=${loginvalues.email}`
+      );
 
       if (!loginvalues.email || !loginvalues.password) {
         toast.error("Enter email & password");
@@ -50,7 +56,7 @@ function App() {
 
   function logout() {
     localStorage.removeItem("user");
-    setUser(false)
+    setUser(false);
   }
 
   function handleEmail(e) {
@@ -58,23 +64,28 @@ function App() {
   }
 
   return (
-    <UserContext.Provider value={{ chatlistID, setChatlistID,logout }}>
+    <UserContext.Provider
+      value={{
+        chatlistID,
+        setChatlistID,
+        logout,
+        userID,   // ⭐ FIXED: NOW userID EXISTS
+      }}
+    >
       <div className="container">
-        {
-          user ? (
-            <>
-              <List setSelectedUser={setSelectedUser} />
-              <Chat selectedUser={selectedUser} />
-              <Details/>
-            </>
-          ) : (
-            <Login handleEmail={handleEmail} submitLogin={submitLogin} />
-          )
-        }
+        {user ? (
+          <>
+            <List setSelectedUser={setSelectedUser} />
+            <Chat selectedUser={selectedUser} />
+            <Details />
+          </>
+        ) : (
+          <Login handleEmail={handleEmail} submitLogin={submitLogin} />
+        )}
         <Notify />
       </div>
     </UserContext.Provider>
-  )
+  );
 }
 
 export default App;
