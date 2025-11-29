@@ -49,5 +49,5 @@ It allows users to view chats, send/receive messages, and manage conversations i
 2. A chat list appears on the left sidebar.
 3. Clicking a chat updates the selected chat using Context API.
 4. Messages for the selected chat load dynamically using Axios.
-5.User types a message → message is sent to JSON server and UI updates instantly.
+5. User types a message → message is sent to JSON server and UI updates instantly.
 
