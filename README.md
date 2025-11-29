@@ -1,16 +1,53 @@
-# React + Vite
+# 💬 Chat Application Using React JS
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+This project is a fully functional **Chat Application** built using **React JS** with a **mock backend using JSON Server**.  
+It allows users to view chats, send/receive messages, and manage conversations in a clean and modern UI.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## 🚀 Features
 
-## React Compiler
+- 🔐 **User Login Interface**
+- 📜 **Chat List View**
+- 💬 **One-to-One Messaging**
+- ⚛️ **React Context API for Global State Management**
+- 🔄 **Real-time UI Updates (without WebSockets)**
+- 📡 **Axios API Integration**
+- 🧩 **Modular Component Structure**
+- 🗄️ **JSON Server as Mock Backend**
+- 🎨 **Responsive & Clean UI**
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+---
 
-## Expanding the ESLint configuration
+## 🛠️ Tech Stack
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+### **Frontend**
+- React JS  
+- Context API  
+- React Hooks (`useState`, `useEffect`, `useContext`)  
+- Axios  
+- CSS  
+
+### **Backend (Mock API)**
+- JSON Server  
+- db.json (stores users, chats, messages)
+
+### **Build Tool**
+- Vite
+
+## ⚙️ Installation & Setup
+
+### **1. Install Dependencies**
+- npm install
+### **2. Start JSON Server**
+- No need run the JSON Server because API is Live
+### **3. Run the React Application**
+- npm run dev
+
+## 🔄 How the App Works
+1. The user logs in using a simple login component.
+2. A chat list appears on the left sidebar.
+3. Clicking a chat updates the selected chat using Context API.
+4. Messages for the selected chat load dynamically using Axios.
+5. User types a message → message is sent to JSON server and UI updates instantly.
+
