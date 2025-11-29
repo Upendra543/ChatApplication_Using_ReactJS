@@ -35,5 +35,16 @@ It allows users to view chats, send/receive messages, and manage conversations i
 ### **Build Tool**
 - Vite
 
+## ⚙️ Installation & Setup
+
+### **1. Install Dependencies**
+- npm install
+### **2. Start JSON Server**
+- No need run the JSON Server because API is Live
+### **3. Run the React Application**
+- npm run dev
+
+## 🔄 How the App Works
+
 
 
