@@ -45,6 +45,9 @@ It allows users to view chats, send/receive messages, and manage conversations i
 - npm run dev
 
 ## 🔄 How the App Works
-
-
+1. The user logs in using a simple login component.
+2. A chat list appears on the left sidebar.
+3. Clicking a chat updates the selected chat using Context API.
+4. Messages for the selected chat load dynamically using Axios.
+5.User types a message → message is sent to JSON server and UI updates instantly.
 
