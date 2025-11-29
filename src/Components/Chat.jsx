@@ -15,19 +15,17 @@ const Chat = () => {
   const [searchValue, setSearchValue] = useState(false);
   const [showClearPopup, setShowClearPopup] = useState(false);
   const [viewprofile, setViewprofile] = useState(false);
-  const [msglength, setMsglength] = useState(messages.length);
   const endRef = useRef(null);
 
-  // unique chat ID between two users
+  // Unique chat ID between two users
   const chatId =
     loggedInUser.id < chatlistID
       ? `${loggedInUser.id}_${chatlistID}`
       : `${chatlistID}_${loggedInUser.id}`;
 
-  // LOAD USER + CHAT MESSAGES
-  // ⭐ CHECK SERVER CHAT LENGTH FOR NEW MESSAGES
+  // ⭐ 1) Load user immediately when selecting chat
   useEffect(() => {
-    const interval = setInterval(async () => {
+    const fetchUser = async () => {
       if (!chatlistID) return;
 
       try {
@@ -35,9 +33,28 @@ const Chat = () => {
           `https://chatappdb-fxka.onrender.com/userslogin/${chatlistID}`
         );
 
+        setUser(res.data);
+        setMessages(res.data.chat?.[chatId] || []);
+      } catch (err) {
+        console.log("User load error:", err);
+      }
+    };
+
+    fetchUser();
+  }, [chatlistID, chatId]);
+
+  // ⭐ 2) Auto-refresh for new messages
+  useEffect(() => {
+    if (!chatlistID) return;
+
+    const interval = setInterval(async () => {
+      try {
+        const res = await axios.get(
+          `https://chatappdb-fxka.onrender.com/userslogin/${chatlistID}`
+        );
+
         const serverMessages = res.data.chat?.[chatId] || [];
 
-        // 🔥 If message count changed → refresh chat
         if (serverMessages.length !== messages.length) {
           setUser(res.data);
           setMessages(serverMessages);
@@ -45,12 +62,10 @@ const Chat = () => {
       } catch (err) {
         console.log("Auto refresh error:", err);
       }
-    }, 1500); // check every 1.5 sec
+    }, 1500);
 
     return () => clearInterval(interval);
-
-  }, [chatlistID, messages.length]);
-
+  }, [chatlistID, messages.length, chatId]);
 
   // Auto scroll
   useEffect(() => {
@@ -79,7 +94,6 @@ const Chat = () => {
     setMessages(updatedMessages);
     setemojitxt("");
 
-    // Update both users' chat objects
     await updateChat(updatedMessages);
   };
 
@@ -109,9 +123,9 @@ const Chat = () => {
     reader.readAsDataURL(file);
   };
 
-  // UPDATE CHAT FOR BOTH USERS
+  // ⭐ Correct updateChat function
   const updateChat = async (updatedMessages) => {
-    // patch logged in user
+    // Update logged in user chat
     await axios.patch(
       `https://chatappdb-fxka.onrender.com/userslogin/${loggedInUser.id}`,
       {
@@ -122,12 +136,12 @@ const Chat = () => {
       }
     );
 
-    // patch receiver user
+    // Update receiver chat
     await axios.patch(
       `https://chatappdb-fxka.onrender.com/userslogin/${chatlistID}`,
       {
         chat: {
-          ...(user.chat || {}),
+          ...(user?.chat || {}),
           [chatId]: updatedMessages,
         },
       }
@@ -141,7 +155,6 @@ const Chat = () => {
 
   const clearChat = async () => {
     await updateChat([]);
-
     setMessages([]);
     setShowClearPopup(false);
   };
@@ -150,11 +163,11 @@ const Chat = () => {
     const term = e.target.value.toLowerCase();
 
     if (!term.trim()) {
-      setMessages(user.chat?.[chatId] || []);
+      setMessages(user?.chat?.[chatId] || []);
       return;
     }
 
-    const filtered = (user.chat?.[chatId] || []).filter((msg) =>
+    const filtered = (user?.chat?.[chatId] || []).filter((msg) =>
       msg.text?.toLowerCase().includes(term)
     );
 
