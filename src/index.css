@@ -739,11 +739,10 @@ body {
         outline: none;
         /* background-color: rgba(90, 90, 90, 0.4); */
         /* background: none; */
-        color: var(--white);
+        /* color: var(--white);x */
         border-radius: 5px;
         /* border: 2px solid rgba(0, 0, 0, 0.3); */
         background-color: #ffffffa6;
-        cursor: pointer;
 
         &::placeholder {
           color: var(--black-color);
