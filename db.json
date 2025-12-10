@@ -1,0 +1,168 @@
+{
+  "userslogin": [
+    {
+      "id": "8b34",
+      "username": "admin1",
+      "email": "upendra93@gmail.com",
+      "password": "Upendra@93",
+      "profilename": "Upendra",
+      "bio": "Hello! I'm Upendra, a passionate developer.",
+      "chat": [
+        {
+          "id": 1763900240776,
+          "text": "hi",
+          "image": null,
+          "time": "5:47:20 PM",
+          "senderId": "8b34",
+          "receiverId": "b8dd"
+        },
+        {
+          "id": 1763904633567,
+          "text": "hey",
+          "image": null,
+          "time": "7:00:33 PM",
+          "senderId": "8b34",
+          "receiverId": "b8dd"
+        },
+        {
+          "id": 1763904658981,
+          "text": "",
+          "image":"",
+          "time": "7:00:58 PM",
+          "senderId": "b8dd",
+          "receiverId": "8b34"
+        },
+        {
+          "id": 1763904826724,
+          "text": "hi",
+          "image": null,
+          "time": "7:03:46 PM",
+          "senderId": "b8dd",
+          "receiverId": "8b34"
+        },
+        {
+          "id": 1763904931976,
+          "text": "hello",
+          "image": null,
+          "time": "7:05:31 PM",
+          "senderId": "b8dd",
+          "receiverId": "8b34"
+        }
+      ],
+      "image": "",
+      "friends": [
+        "6e32",
+        "75fb",
+        "919f",
+        "b8dd"
+      ]
+    },
+    {
+      "id": "6e32",
+      "username": "raghu12",
+      "email": "raghu12@gmail.com",
+      "profilename": "",
+      "password": "Raghu@12",
+      "image": "",
+      "chat": []
+    },
+    {
+      "id": "919f",
+      "username": "surekha112",
+      "email": "surekha112@gmail.com",
+      "profilename": "",
+      "password": "Surekha@112",
+      "image": "",
+      "chat": []
+    },
+    {
+      "id": "75fb",
+      "username": "vishnu123",
+      "email": "vishnu123@gmail.com",
+      "password": "Vishnu@123",
+      "profilename": "",
+      "bio": "hey there! i am using chat app",
+      "image": "",
+      "chat": [
+        {
+          "id": 1763900240776,
+          "text": "hi",
+          "image": null,
+          "time": "5:47:20 PM",
+          "senderId": "8b34",
+          "receiverId": "b8dd"
+        },
+        {
+          "id": 1763904522841,
+          "text": "hey hi admin",
+          "image": null,
+          "time": "6:58:42 PM",
+          "senderId": "75fb",
+          "receiverId": "8b34"
+        },
+        {
+          "id": 1763904541460,
+          "text": "yep!!",
+          "image": null,
+          "time": "6:59:01 PM",
+          "senderId": "8b34",
+          "receiverId": "75fb"
+        }
+      ],
+      "friends": [
+        "8b34",
+        "6e32"
+      ]
+    },
+    {
+      "id": "b8dd",
+      "username": "minni13",
+      "email": "meghanaminni13@gmail.com",
+      "password": "Minni@12",
+      "image": "",
+      "chat": [
+        {
+          "id": 1763900240776,
+          "text": "hi",
+          "image": null,
+          "time": "5:47:20 PM",
+          "senderId": "8b34",
+          "receiverId": "b8dd"
+        },
+        {
+          "id": 1763904633567,
+          "text": "hey",
+          "image": null,
+          "time": "7:00:33 PM",
+          "senderId": "8b34",
+          "receiverId": "b8dd"
+        },
+        {
+          "id": 1763904658981,
+          "text": "",
+          "image":"",
+          "time": "7:00:58 PM",
+          "senderId": "b8dd",
+          "receiverId": "8b34"
+        },
+        {
+          "id": 1763904826724,
+          "text": "hi",
+          "image": null,
+          "time": "7:03:46 PM",
+          "senderId": "b8dd",
+          "receiverId": "8b34"
+        },
+        {
+          "id": 1763904931976,
+          "text": "hello",
+          "image": null,
+          "time": "7:05:31 PM",
+          "senderId": "b8dd",
+          "receiverId": "8b34"
+        }
+      ],
+      "profilename": ""
+    }
+  ]
+}
