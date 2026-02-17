@@ -64,14 +64,7 @@ function App() {
   }
 
   return (
-    <UserContext.Provider
-      value={{
-        chatlistID,
-        setChatlistID,
-        logout,
-        userID,   // ⭐ FIXED: NOW userID EXISTS
-      }}
-    >
+    <UserContext.Provider value={{ chatlistID, setChatlistID, logout, userID, }}>
       <div className="container">
         {user ? (
           <>

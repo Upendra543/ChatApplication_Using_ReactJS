@@ -13,7 +13,7 @@ const ChatList = () => {
 
   useEffect(() => {
     loadFriends();
-  }, []);
+  }, [friends]);
 
   const loadFriends = async () => {
     const res = await axios.get(`https://chatappdb-fxka.onrender.com/userslogin/${user.id}`);
@@ -56,6 +56,7 @@ const ChatList = () => {
           src={addmode ? "./minus.png" : "./plus.svg"}
           alt=""
           className='add'
+          
         />
       </div>
 
@@ -69,7 +70,7 @@ const ChatList = () => {
         </div>
       ))}
 
-      {addmode && <Addusers loadFriends={loadFriends} />}
+      {addmode && <Addusers loadFriends={loadFriends} addmode={addmode}/>}
     </div>
   );
 }
